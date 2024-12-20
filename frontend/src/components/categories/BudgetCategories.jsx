@@ -1,20 +1,11 @@
-import axios from "axios"
-import { useState, useEffect } from "react"
+
 import BudgetCategory from "./BudgetCategory";
 
-export default function BudgetCategories() {
+export default function BudgetCategories({categories}) {
 
-    const [categories, setCategories] = useState([]);
+    
 
-    const getBudgetCategories = async () => {
-        const response = await axios.get('http://localhost:3000/budget_categories');
-        setCategories(response.data)
-        console.log(response.data)
-    }
 
-    useEffect(() => {
-        getBudgetCategories();
-    }, [])
 
     return (
         <div>

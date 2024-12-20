@@ -20,20 +20,39 @@ function App() {
     setTransfers(response.data);
   }
 
-  useEffect(() => {
+  const [categories, setCategories] = useState([]);
+
+  const getBudgetCategories = async () => {
+    const response = await axios.get('http://localhost:3000/budget_categories');
+    setCategories(response.data)
+    console.log(response.data)
+  }
+
+  const [accounts, setAccounts] = useState([]);
+
+  const getAccounts = async () => {
+    const response = await axios.get('http://localhost:3000/accounts');
+    setAccounts(response.data)
+  }
+
+  const loadData = () => {
     getTransactions();
     getTransfers();
-  }, [])
+    getBudgetCategories();
+    getAccounts();
+  }
+
+  useEffect(loadData, [])
 
   return (
     <>
 
-      <NewTransModal updateTransactionsList={getTransactions} updateTransfersList={getTransfers} />
+      <NewTransModal updateTransactionsList={loadData} updateTransfersList={loadData} />
       <div style={{ display: "flex", gap: 20, flexDirection: 'row' }}>
         <Transactions transactions={transactions} />
         <div style={{ display: "flex", gap: 200 }}>
-          <BudgetCategories />
-          <Accounts />
+          <BudgetCategories categories={categories} />
+          <Accounts accounts={accounts} />
         </div>
       </div>
     </>

@@ -3,18 +3,9 @@ import { useState, useEffect } from "react"
 import Account from "./Account";
 
 
-export default function Accounts() {
+export default function Accounts({ accounts }) {
 
-    const [accounts, setAccounts] = useState([]);
 
-    const getAccounts = async () => {
-        const response = await axios.get('http://localhost:3000/accounts');
-        setAccounts(response.data)
-    }
-
-    useEffect(() => {
-        getAccounts();
-    }, [])
 
     return (
         <div>
