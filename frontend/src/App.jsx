@@ -29,7 +29,7 @@ function App() {
     <>
 
       <NewTransModal updateTransactionsList={getTransactions} updateTransfersList={getTransfers} />
-      <div style={{ display: "flex", gap: 20 }}>
+      <div style={{ display: "flex", gap: 20, flexDirection: 'row' }}>
         <Transactions transactions={transactions} />
         <div style={{ display: "flex", gap: 200 }}>
           <BudgetCategories />
