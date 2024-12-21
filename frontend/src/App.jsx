@@ -48,7 +48,7 @@ function App() {
     <>
 
       <NewTransModal updateTransactionsList={loadData} updateTransfersList={loadData} />
-      <div style={{ display: "flex", gap: 20, flexDirection: 'row' }}>
+      <div style={{  }}>
         <Transactions transactions={transactions} />
         <div style={{ display: "flex", gap: 200 }}>
           <BudgetCategories categories={categories} />

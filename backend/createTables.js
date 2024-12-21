@@ -39,12 +39,17 @@ const createTables = async () => {
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-        category_id INT REFERENCES budget_categories(id) ON DELETE SET NULL,
         transaction_type VARCHAR(50) NOT NULL,
-        amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
         description TEXT,
         transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS transaction_cateogries (
+        id SERIAL PRIMARY KEY,
+        transaction_id INT NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+        category_id INT NOT NULL REFERENCES budget_categories(id) ON DELETE CASCADE,
+        amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0)
+    ;)
 
     CREATE TABLE IF NOT EXISTS transfers (
         id SERIAL PRIMARY KEY,
