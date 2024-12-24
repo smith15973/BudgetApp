@@ -25,7 +25,6 @@ function App() {
   const getBudgetCategories = async () => {
     const response = await axios.get('http://localhost:3000/budget_categories');
     setCategories(response.data)
-    console.log(response.data)
   }
 
   const [accounts, setAccounts] = useState([]);
@@ -44,12 +43,16 @@ function App() {
 
   useEffect(loadData, [])
 
+  const openTransaction = (transaction_id) => {
+    console.log(`OPENING TRANSACTION ${transaction_id}!`)
+  }
+
   return (
     <>
 
       <NewTransModal updateTransactionsList={loadData} updateTransfersList={loadData} />
       <div style={{  }}>
-        <Transactions transactions={transactions} />
+        <Transactions transactions={transactions} handleRowClick={openTransaction} />
         <div style={{ display: "flex", gap: 200 }}>
           <BudgetCategories categories={categories} />
           <Accounts accounts={accounts} />

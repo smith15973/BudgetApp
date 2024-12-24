@@ -1,38 +1,64 @@
 const Pool = require('pg').Pool
 const pool = new Pool({
-  user: 'me',
-  host: 'localhost',
-  database: 'budgetapp',
-  password: '0912',
-  port: 5432,
+    user: 'me',
+    host: 'localhost',
+    database: 'budgetapp',
+    password: '0912',
+    port: 5432,
 })
 
-module.exports.getTransactions = (req, res) => {
-    const query = `
-      SELECT
-        transactions.*,
-      a.name as account_name,
-      bc.name as category_name
-      FROM transactions
-      JOIN accounts a 
-      ON transactions.account_id = a.id
-      JOIN budget_categories bc 
-      ON transactions.category_id = bc.id
-      ORDER BY transaction_date ASC;
-    `;
+module.exports.getTransactions = async (req, res) => {
+    const client = await pool.connect();
 
-    pool.query(query, (error, results) => {
-        if (error) {
-            res.status(500).json({ error: error.message });
+    try {
+        await client.query('BEGIN');
+
+        const result = await client.query(`
+            SELECT
+                transactions.*,
+                a.name as account_name
+            FROM transactions
+            JOIN accounts a 
+            ON transactions.account_id = a.id
+            ORDER BY transaction_date ASC;
+        `);
+
+        
+
+        for (let i = 0; i < result.rows.length; i++) {
+            const rowResult = await client.query(`
+                SELECT 
+                    amount, c.name as category_name
+                FROM transaction_categories
+                JOIN budget_categories c
+                ON transaction_categories.category_id = c.id
+                WHERE transaction_categories.transaction_id = $1
+            `, [result.rows[i].id]);
+
+            result.rows[i].categories = rowResult.rows;
+            console.log(rowResult.rows)
         }
-        res.status(200).json(results.rows);
-    });
+        await client.query('COMMIT');
+
+        console.log(result.rows)
+        
+        // return res.status(200).json("hi");
+        return res.status(200).json(result.rows);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to get transactions:', error);
+        res.status(500).json({ error: 'Failed to get transactions: ' + error.message });
+    } finally {
+        client.release();
+    }
 }
 
 module.exports.addTransaction = async (req, res) => {
-    const { transaction_date, account_id, transaction_type, amount, category_id, description, user_id } = req.body
+    const { transaction_date, account_id, transaction_type, transaction_categories, description, user_id } = req.body
 
-    if (!transaction_date || !account_id || !transaction_type || !amount || !category_id || !description || !user_id) {
+    console.log(req.body)
+
+    if (!transaction_date || !account_id || !transaction_type || !transaction_categories || !description || !user_id) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -42,30 +68,42 @@ module.exports.addTransaction = async (req, res) => {
         await client.query('BEGIN');
 
         const insertTransactionQuery = `
-           INSERT INTO transactions (transaction_date, account_id, transaction_type, amount, category_id, description, user_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           INSERT INTO transactions (transaction_date, account_id, transaction_type, description, user_id)
+           VALUES ($1, $2, $3, $4, $5)
            RETURNING id`;
 
-        await client.query(insertTransactionQuery, [transaction_date, account_id, transaction_type, amount, category_id, description, user_id]);
+        const result = await client.query(insertTransactionQuery, [transaction_date, account_id, transaction_type, description, user_id]);
+        const transaction_id = result.rows[0].id;
+
+        let total = 0;
+        for (let category of transaction_categories) {
+            await client.query(
+                `INSERT INTO transaction_categories (transaction_id, category_id, amount)
+            VALUES ($1, $2, $3)`, [transaction_id, category.category_id, category.amount])
+
+            if (transaction_type === "Spending") {
+                await client.query(`UPDATE budget_categories SET balance = balance - $1 WHERE id = $2`, [category.amount, category.category_id])
+            }
+            else if (transaction_type === "Income") {
+                await client.query(`UPDATE budget_categories SET balance = balance + $1 WHERE id = $2`, [category.amount, category.category_id])
+            }
+            total += category.amount;
+
+        }
 
 
         // Update balances
         let updateAccountBalancesQuery;
-        let updateCategoriesBalancesQuery;
         if (transaction_type === "Spending") {
-            updateCategoriesBalancesQuery = `UPDATE budget_categories SET balance = balance - $1 WHERE id = $2`;
             updateAccountBalancesQuery = `UPDATE accounts SET balance = balance - $1 WHERE id = $2`;
         }
         else if (transaction_type === "Income") {
-            updateCategoriesBalancesQuery = `UPDATE budget_categories SET balance = balance + $1 WHERE id = $2`;
             updateAccountBalancesQuery = `UPDATE accounts SET balance = balance + $1 WHERE id = $2`;
         }
 
 
-        await client.query(updateAccountBalancesQuery, [amount, account_id])
-        await client.query(updateCategoriesBalancesQuery, [amount, category_id])
+        await client.query(updateAccountBalancesQuery, [total.toFixed(2), account_id])
 
-        await client.query('COMMIT');
 
         await client.query('COMMIT');
         res.status(201).send(`Transaction Added Successfully`);

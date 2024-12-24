@@ -1,11 +1,11 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-    user: 'me',
-    host: 'localhost',
-    database: 'budgetapp',
-    password: '0912',
-    port: 5432,
+  user: 'me',
+  host: 'localhost',
+  database: 'budgetapp',
+  password: '0912',
+  port: 5432,
 });
 
 const createTables = async () => {
@@ -41,15 +41,16 @@ const createTables = async () => {
         account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
         transaction_type VARCHAR(50) NOT NULL,
         description TEXT,
-        transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        cleared BOOLEAN DEFAULT FALSE;
     );
 
-    CREATE TABLE IF NOT EXISTS transaction_cateogries (
+    CREATE TABLE IF NOT EXISTS transaction_categories (
         id SERIAL PRIMARY KEY,
         transaction_id INT NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
         category_id INT NOT NULL REFERENCES budget_categories(id) ON DELETE CASCADE,
-        amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0)
-    ;)
+        amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0)
+    );
 
     CREATE TABLE IF NOT EXISTS transfers (
         id SERIAL PRIMARY KEY,
