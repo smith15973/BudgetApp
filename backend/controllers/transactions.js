@@ -20,10 +20,10 @@ module.exports.getTransactions = async (req, res) => {
             FROM transactions
             JOIN accounts a 
             ON transactions.account_id = a.id
-            ORDER BY transaction_date ASC;
+            ORDER BY transaction_date ASC, id ASC;
         `);
 
-        
+
 
         for (let i = 0; i < result.rows.length; i++) {
             const rowResult = await client.query(`
@@ -36,13 +36,10 @@ module.exports.getTransactions = async (req, res) => {
             `, [result.rows[i].id]);
 
             result.rows[i].categories = rowResult.rows;
-            console.log(rowResult.rows)
         }
         await client.query('COMMIT');
 
-        console.log(result.rows)
-        
-        // return res.status(200).json("hi");
+
         return res.status(200).json(result.rows);
     } catch (error) {
         await client.query('ROLLBACK');
@@ -56,9 +53,7 @@ module.exports.getTransactions = async (req, res) => {
 module.exports.addTransaction = async (req, res) => {
     const { transaction_date, account_id, transaction_type, transaction_categories, description, user_id } = req.body
 
-    console.log(req.body)
-
-    if (!transaction_date || !account_id || !transaction_type || !transaction_categories || !description || !user_id) {
+    if (!transaction_date || !account_id || !transaction_type || !transaction_categories || !user_id) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -117,6 +112,27 @@ module.exports.addTransaction = async (req, res) => {
     }
 
 }
+
+
+module.exports.updateTransaction = async (req, res) => {
+    const transaction_id = req.params.id;
+    const { name, value } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+        const response = await client.query(`UPDATE transactions SET ${name} = $1 WHERE id = $2;`, [value, transaction_id]);
+        await client.query('COMMIT');
+        res.status(200).json({ message: `Successfully updated transaction ${transaction_id}` });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to update transaction:', error);
+        res.status(500).json({ error: 'Failed to update transaction: ' + error.message });
+    } finally {
+        client.release();
+    }
+}
+
 
 module.exports.deleteTransaction = async (req, res) => {
     const { transaction_id } = req.body;

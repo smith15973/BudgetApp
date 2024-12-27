@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser');
-const { getTransactions, addTransaction, deleteTransaction } = require('./controllers/transactions');
+const { getTransactions, addTransaction, deleteTransaction, updateTransaction } = require('./controllers/transactions');
 const { getCategories, addCategory } = require('./controllers/categories');
 const { getAccounts, addAccount } = require('./controllers/accounts');
 const { getTransfers, addTransfer } = require('./controllers/transfers');
@@ -26,6 +26,7 @@ app.get('/accounts', getAccounts)
 app.post('/accounts', addAccount)
 app.get('/transactions', getTransactions)
 app.post('/transactions', addTransaction)
+app.put('/transactions/:id', updateTransaction)
 app.get('/transfers', getTransfers)
 app.post('/transfers', addTransfer)
 

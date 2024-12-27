@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Transactions from './components/transactions/Transactions';
 import BudgetCategories from './components/categories/BudgetCategories';
 import Accounts from './components/accounts/Accounts';
+import { Box } from '@mui/material';
 
 function App() {
 
@@ -14,6 +15,7 @@ function App() {
   const getTransactions = async () => {
     const response = await axios.get("http://localhost:3000/transactions");
     setTransactions(response.data);
+
   }
   const getTransfers = async () => {
     const response = await axios.get("http://localhost:3000/transfers");
@@ -49,15 +51,19 @@ function App() {
 
   return (
     <>
+      <Box sx={{display: 'flex',}}>
+        <Box sx={{ maxWidth: '50%', mr: 20 }}>
+          <NewTransModal updateTransactionsList={loadData} updateTransfersList={loadData} />
+          <Transactions transactions={transactions} handleRowClick={openTransaction} onTransactionUpdate={getTransactions} />
+        </Box>
 
-      <NewTransModal updateTransactionsList={loadData} updateTransfersList={loadData} />
-      <div style={{  }}>
-        <Transactions transactions={transactions} handleRowClick={openTransaction} />
-        <div style={{ display: "flex", gap: 200 }}>
+
+        <Box sx={{ display: "flex",}}>
           <BudgetCategories categories={categories} />
           <Accounts accounts={accounts} />
-        </div>
-      </div>
+        </Box>
+      </Box>
+
     </>
   )
 }
